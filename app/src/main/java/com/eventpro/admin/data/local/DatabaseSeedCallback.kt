@@ -22,7 +22,7 @@ class DatabaseSeedCallback(
 ) : RoomDatabase.Callback() {
     override fun onCreate(database: SupportSQLiteDatabase) {
         super.onCreate(database)
-        scope.launch(Dispatchers.IO) { seed(AppDatabase.getInstance(context())) }
+        scope.launch(Dispatchers.IO) { seed(AppDatabase.getInstance(context(), scope)) }
     }
 
     private suspend fun seed(db: AppDatabase) {

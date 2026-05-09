@@ -78,7 +78,12 @@ fun EventDetailScreen(navController: NavController, eventId: Long, vm: EventDeta
                         StatusBadge(event.status)
                         val days = DateFormatter.daysUntil(event.startDateMillis)
                         Surface(shape = MaterialTheme.shapes.extraSmall, color = MaterialTheme.colorScheme.secondaryContainer) {
-                            Text(if (days >= 0) "In $days days" else "Past", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                            val daysLabel = when {
+                                days < 0L -> "Past"
+                                days == 0L -> "Today"
+                                else -> "In $days days"
+                            }
+                            Text(daysLabel, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                         }
                     }
                     Spacer(Modifier.height(8.dp))

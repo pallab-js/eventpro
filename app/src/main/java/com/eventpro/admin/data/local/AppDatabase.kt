@@ -20,6 +20,7 @@ import com.eventpro.admin.data.local.entity.InventoryReservationEntity
 import com.eventpro.admin.data.local.entity.TimelineItemEntity
 import com.eventpro.admin.data.local.entity.TransactionEntity
 import com.eventpro.admin.data.local.entity.VendorEntity
+import kotlinx.coroutines.CoroutineScope
 
 @Database(
     entities = [
@@ -50,18 +51,20 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
 
-        fun getInstance(context: android.content.Context): AppDatabase {
+        fun getInstance(context: android.content.Context, scope: CoroutineScope): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: buildDatabase(context).also { INSTANCE = it }
+                INSTANCE ?: buildDatabase(context, scope).also { INSTANCE = it }
             }
         }
 
-        private fun buildDatabase(context: android.content.Context): AppDatabase {
+        private fun buildDatabase(context: android.content.Context, scope: CoroutineScope): AppDatabase {
             return androidx.room.Room.databaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java,
                 "eventpro.db"
-            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addCallback(DatabaseSeedCallback({ context.applicationContext }, scope))
+                .build()
         }
 
         val MIGRATION_1_2 = object : androidx.room.migration.Migration(1, 2) {

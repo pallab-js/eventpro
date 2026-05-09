@@ -25,8 +25,8 @@ object DatabaseModule {
         CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     @Provides @Singleton
-    fun provideDatabase(@ApplicationContext ctx: Context): AppDatabase {
-        return AppDatabase.getInstance(ctx)
+    fun provideDatabase(@ApplicationContext ctx: Context, @ApplicationScope scope: CoroutineScope): AppDatabase {
+        return AppDatabase.getInstance(ctx, scope)
     }
 
     @Provides fun provideEventDao(db: AppDatabase) = db.eventDao()
