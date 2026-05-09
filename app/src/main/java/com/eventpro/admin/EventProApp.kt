@@ -4,6 +4,7 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import androidx.work.Configuration
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
@@ -11,12 +12,19 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.eventpro.admin.worker.MilestoneReminderWorker
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 import java.util.concurrent.TimeUnit
 
 @HiltAndroidApp
 class EventProApp : Application() {
+    @Inject
+    lateinit var workerFactory: MilestoneReminderWorker.Factory
+
     override fun onCreate() {
         super.onCreate()
+        WorkManager.initialize(this, Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build())
         createNotificationChannel()
         scheduleReminders()
     }

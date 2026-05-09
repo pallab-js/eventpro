@@ -3,20 +3,37 @@ package com.eventpro.admin.worker
 import android.content.Context
 import android.app.NotificationManager
 import androidx.core.app.NotificationCompat
-import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.ListenableWorker
+import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import com.eventpro.admin.data.local.AppDatabase
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 
-@HiltWorker
-class MilestoneReminderWorker @AssistedInject constructor(
-    @Assisted appContext: Context,
-    @Assisted workerParams: WorkerParameters,
+class MilestoneReminderWorker(
+    appContext: Context,
+    workerParams: WorkerParameters,
     private val db: AppDatabase
 ) : CoroutineWorker(appContext, workerParams) {
+
+    @Singleton
+    class Factory @Inject constructor(
+        private val db: AppDatabase
+    ) : WorkerFactory() {
+        override fun createWorker(
+            appContext: Context,
+            workerClassName: String,
+            workerParameters: WorkerParameters
+        ): ListenableWorker? {
+            return if (workerClassName == MilestoneReminderWorker::class.java.name) {
+                MilestoneReminderWorker(appContext, workerParameters, db)
+            } else {
+                null
+            }
+        }
+    }
 
     override suspend fun doWork(): Result {
         val now = System.currentTimeMillis()
