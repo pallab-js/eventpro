@@ -2,6 +2,7 @@ package com.eventpro.admin.domain.repository
 
 import com.eventpro.admin.domain.model.Event
 import com.eventpro.admin.domain.model.EventStatus
+import com.eventpro.admin.domain.model.TimelineItem
 import kotlinx.coroutines.flow.Flow
 
 interface EventRepository {
@@ -12,4 +13,7 @@ interface EventRepository {
     fun getCriticalMilestones(): Flow<List<Event>>
     suspend fun upsertEvent(event: Event): Long
     suspend fun deleteEvent(event: Event)
+    fun getTimelineItemsForEvent(eventId: Long): Flow<List<TimelineItem>>
+    suspend fun addTimelineItem(eventId: Long, title: String, description: String, dateMillis: Long)
+    suspend fun toggleTimelineItem(id: Long, completed: Boolean)
 }

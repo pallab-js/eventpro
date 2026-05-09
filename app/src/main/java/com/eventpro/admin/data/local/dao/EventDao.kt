@@ -1,6 +1,9 @@
 package com.eventpro.admin.data.local.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Query
+import androidx.room.Upsert
 import com.eventpro.admin.data.local.entity.EventEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -17,6 +20,15 @@ interface EventDao {
 
     @Query("SELECT * FROM events WHERE startDateMillis >= :nowMillis ORDER BY startDateMillis ASC LIMIT :limit")
     fun getUpcomingEvents(nowMillis: Long, limit: Int): Flow<List<EventEntity>>
+
+    @Query("""
+        SELECT * FROM events
+        WHERE startDateMillis >= :nowMillis
+          AND status IN ('CONFIRMED', 'IN_PROGRESS')
+        ORDER BY startDateMillis ASC
+        LIMIT :limit
+    """)
+    fun getCriticalMilestones(nowMillis: Long, limit: Int = 5): Flow<List<EventEntity>>
 
     @Query("SELECT COUNT(*) FROM events")
     fun getEventCount(): Flow<Int>

@@ -13,5 +13,6 @@ data class TransactionEntity(
     val dateMillis: Long,
     val referenceNumber: String,
     val eventId: Long?,
-    val clientOrVendorName: String
+    val clientOrVendorName: String,
+    val isPaid: Boolean = false
 )

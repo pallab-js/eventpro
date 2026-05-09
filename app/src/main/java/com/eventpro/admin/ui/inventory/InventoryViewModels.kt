@@ -1,14 +1,22 @@
 package com.eventpro.admin.ui.inventory
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.eventpro.admin.domain.model.*
+import com.eventpro.admin.domain.model.InventoryCategory
+import com.eventpro.admin.domain.model.InventoryItem
+import com.eventpro.admin.domain.model.StockStatus
 import com.eventpro.admin.domain.repository.InventoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@Immutable
 data class InventoryUiState(
     val isLoading: Boolean = true,
     val items: List<InventoryItem> = emptyList(),
@@ -57,6 +65,7 @@ class InventoryViewModel @Inject constructor(private val repo: InventoryReposito
     }
 }
 
+@Immutable
 data class AddEditInventoryFormState(
     val name: String = "",
     val nameError: String? = null,
@@ -75,9 +84,9 @@ class AddEditInventoryViewModel @Inject constructor(private val repo: InventoryR
     val formState: StateFlow<AddEditInventoryFormState> = _form.asStateFlow()
 
     fun load(itemId: Long) = viewModelScope.launch {
-        repo.getAllItems().firstOrNull()?.find { it.id == itemId }?.let { item ->
-            _form.update { it.copy(name = item.name, category = item.category, description = item.description, totalUnits = item.totalUnits.toString(), availableUnits = item.availableUnits.toString(), materialIconName = item.materialIconName) }
-        }
+        val items = repo.getAllItems().first()
+        val item = items.find { it.id == itemId } ?: return@launch
+        _form.update { it.copy(name = item.name, category = item.category, description = item.description, totalUnits = item.totalUnits.toString(), availableUnits = item.availableUnits.toString(), materialIconName = item.materialIconName) }
     }
 
     fun onNameChange(v: String) = _form.update { it.copy(name = v, nameError = null) }

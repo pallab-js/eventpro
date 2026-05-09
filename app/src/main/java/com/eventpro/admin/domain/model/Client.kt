@@ -1,8 +1,18 @@
 package com.eventpro.admin.domain.model
 
-enum class ClientTier { STANDARD, VIP, ENTERPRISE }
-enum class ClientStatus { ACTIVE, PAST }
+import androidx.compose.runtime.Immutable
 
+enum class ClientTier(val displayName: String) {
+    STANDARD("Standard"),
+    VIP("VIP"),
+    ENTERPRISE("Enterprise")
+}
+enum class ClientStatus(val displayName: String) {
+    ACTIVE("Active"),
+    PAST("Past")
+}
+
+@Immutable
 data class Client(
     val id: Long = 0,
     val companyName: String,

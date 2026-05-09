@@ -24,3 +24,5 @@
 
 # Keep Compose
 -keep class androidx.compose.** { *; }
+
+# Keep nothing extra - R8 handles icon shrinking

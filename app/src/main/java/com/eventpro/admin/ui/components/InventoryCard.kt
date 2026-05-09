@@ -2,7 +2,12 @@ package com.eventpro.admin.ui.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.Chair
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Lightbulb
+import androidx.compose.material.icons.outlined.MapsHomeWork
+import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -12,7 +17,10 @@ import androidx.compose.ui.unit.dp
 import com.eventpro.admin.domain.model.InventoryCategory
 import com.eventpro.admin.domain.model.InventoryItem
 import com.eventpro.admin.domain.model.StockStatus
-import com.eventpro.admin.ui.theme.*
+import com.eventpro.admin.ui.theme.ErrorContainer
+import com.eventpro.admin.ui.theme.ErrorRed
+import com.eventpro.admin.ui.theme.SuccessGreen
+import com.eventpro.admin.ui.theme.WarningAmber
 
 @Composable
 fun StockStatusChip(status: StockStatus) {

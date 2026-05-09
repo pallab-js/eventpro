@@ -6,7 +6,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.eventpro.admin.R
 import com.eventpro.admin.ui.theme.SurfaceContainerHigh
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -16,7 +18,7 @@ fun AppTopBar(
     subtitle: String? = null,
     navigationIcon: @Composable (() -> Unit)? = null,
     actions: @Composable (() -> Unit)? = null,
-    showSyncChip: Boolean = true
+    showOfflineBadge: Boolean = true
 ) {
     TopAppBar(
         title = {
@@ -33,7 +35,7 @@ fun AppTopBar(
         navigationIcon = { navigationIcon?.invoke() },
         actions = {
             actions?.invoke()
-            if (showSyncChip) SyncStatusChip()
+            if (showOfflineBadge) OfflineBadge()
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
@@ -42,10 +44,10 @@ fun AppTopBar(
 }
 
 @Composable
-fun SyncStatusChip() {
+fun OfflineBadge() {
     AssistChip(
         onClick = {},
-        label = { Text("Local", style = MaterialTheme.typography.labelSmall) },
+        label = { Text(stringResource(R.string.status_local), style = MaterialTheme.typography.labelSmall) },
         leadingIcon = { Icon(Icons.Default.CloudOff, null, Modifier.size(16.dp)) },
         colors = AssistChipDefaults.assistChipColors(containerColor = SurfaceContainerHigh)
     )

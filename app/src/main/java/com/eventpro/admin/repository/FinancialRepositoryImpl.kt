@@ -15,6 +15,7 @@ class FinancialRepositoryImpl @Inject constructor(private val dao: TransactionDa
     override fun getTotalByTypeInRange(type: String, from: Long, to: Long) = dao.getTotalByTypeInRange(type, from, to)
     override fun getTransactionsByDateRange(from: Long, to: Long) = dao.getTransactionsByDateRange(from, to).map { it.map { t -> t.toDomain() } }
     override fun getExpenseTotalsGroupedByCategory() = dao.getExpenseTotalsGroupedByCategory()
+    override fun getTransactionsByEvent(eventId: Long) = dao.getTransactionsByEvent(eventId).map { it.map { t -> t.toDomain() } }
     override suspend fun upsertTransaction(t: Transaction) = dao.upsertTransaction(t.toEntity())
     override suspend fun deleteTransaction(t: Transaction) = dao.deleteTransaction(t.toEntity())
 }

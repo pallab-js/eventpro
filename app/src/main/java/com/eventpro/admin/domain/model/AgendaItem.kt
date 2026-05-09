@@ -1,5 +1,8 @@
 package com.eventpro.admin.domain.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class TimelineItem(
     val id: Long = 0,
     val eventId: Long,
@@ -9,6 +12,7 @@ data class TimelineItem(
     val completed: Boolean = false
 )
 
+@Immutable
 data class AgendaItem(
     val id: Long = 0,
     val title: String,

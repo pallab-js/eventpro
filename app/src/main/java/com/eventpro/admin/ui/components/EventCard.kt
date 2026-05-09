@@ -3,7 +3,11 @@ package com.eventpro.admin.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.Business
+import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,7 +16,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.eventpro.admin.domain.model.Event
 import com.eventpro.admin.domain.model.EventStatus
-import com.eventpro.admin.ui.theme.*
+import com.eventpro.admin.ui.theme.ErrorRed
+import com.eventpro.admin.ui.theme.Navy400
+import com.eventpro.admin.ui.theme.OutlineColor
+import com.eventpro.admin.ui.theme.Slate600
+import com.eventpro.admin.ui.theme.SuccessGreen
+import com.eventpro.admin.ui.theme.WarningAmber
 import com.eventpro.admin.util.CurrencyFormatter
 import com.eventpro.admin.util.DateFormatter
 

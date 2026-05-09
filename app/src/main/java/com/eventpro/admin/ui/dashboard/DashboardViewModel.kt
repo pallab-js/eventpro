@@ -1,21 +1,33 @@
 package com.eventpro.admin.ui.dashboard
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.eventpro.admin.data.local.dao.AgendaDao
+import com.eventpro.admin.data.preferences.AppPreferences
+import com.eventpro.admin.data.preferences.ThemeMode
 import com.eventpro.admin.domain.model.AgendaItem
 import com.eventpro.admin.domain.model.Event
+import com.eventpro.admin.domain.repository.AgendaRepository
 import com.eventpro.admin.domain.repository.EventRepository
-import com.eventpro.admin.domain.repository.FinancialRepository
-import com.eventpro.admin.repository.toDomain
-import com.eventpro.admin.util.DateFormatter
+import com.eventpro.admin.domain.usecase.BuildRevenueChartUseCase
+import com.eventpro.admin.domain.usecase.GetDashboardMetricsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@Immutable
 data class DashboardUiState(
     val isLoading: Boolean = true,
+    val isInitialLoad: Boolean = true,
+    val snackbarMessage: String? = null,
     val revenueYtdCents: Long = 0L,
     val pendingCents: Long = 0L,
     val overdueCents: Long = 0L,
@@ -27,68 +39,105 @@ data class DashboardUiState(
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    private val eventRepository: EventRepository,
-    private val financialRepository: FinancialRepository,
-    private val agendaDao: AgendaDao
+    private val getDashboardMetricsUseCase: GetDashboardMetricsUseCase,
+    private val buildRevenueChartUseCase: BuildRevenueChartUseCase,
+    private val appPreferences: AppPreferences,
+    private val agendaRepo: AgendaRepository,
+    private val eventRepo: EventRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+    val themeMode = appPreferences.themeMode
+    private val refreshTrigger = MutableStateFlow(0)
 
-    init { loadDashboard() }
+    init { observeDashboard() }
 
-    private fun loadDashboard() {
+    fun toggleTheme() = viewModelScope.launch {
+        val current = appPreferences.themeMode.first()
+        val next = when (current) {
+            ThemeMode.SYSTEM.value -> ThemeMode.LIGHT.value
+            ThemeMode.LIGHT.value -> ThemeMode.DARK.value
+            else -> ThemeMode.SYSTEM.value
+        }
+        appPreferences.setThemeMode(next)
+    }
+
+    private fun observeDashboard() {
         viewModelScope.launch {
-            val now = System.currentTimeMillis()
-            val thirtyDaysAgo = now - 30L * 24 * 60 * 60 * 1000
-            val sixtyDaysAgo = now - 60L * 24 * 60 * 60 * 1000
-
-            val incomeFlow = financialRepository.getTotalByType("INCOME")
-            val expenseFlow = financialRepository.getTotalByType("EXPENSE")
-            val recentIncomeFlow = financialRepository.getTotalByTypeInRange("INCOME", thirtyDaysAgo, now)
-            val prevIncomeFlow = financialRepository.getTotalByTypeInRange("INCOME", sixtyDaysAgo, thirtyDaysAgo)
-            val milestonesFlow = eventRepository.getCriticalMilestones()
-            val agendaFlow = agendaDao.getTodayAgenda(DateFormatter.todayStartMillis(), DateFormatter.todayEndMillis())
-                .map { list -> list.map { it.toDomain() } }
-            val recentTxFlow = financialRepository.getTransactionsByDateRange(now - 7 * 24 * 60 * 60 * 1000L, now)
-
-            combine(incomeFlow, expenseFlow, recentIncomeFlow, prevIncomeFlow, milestonesFlow) { a, b, c, d, e ->
-                arrayOf<Any>(a, b, c, d, e)
-            }.combine(agendaFlow) { arr, agenda ->
-                arrayOf<Any>(arr[0], arr[1], arr[2], arr[3], arr[4], agenda)
-            }.combine(recentTxFlow) { arr, recentTx ->
-                val totalIncome = arr[0] as Long
-                val totalExpenses = arr[1] as Long
-                val recentIncome = arr[2] as Long
-                val prevIncome = arr[3] as Long
-                val milestones = arr[4] as List<Event>
-                val agenda = arr[5] as List<AgendaItem>
-                val chartData = buildChartData(recentTx.map { it.dateMillis to it.amountCents.toFloat() })
-                val changePct = if (prevIncome > 0) ((recentIncome - prevIncome).toFloat() / prevIncome * 100) else 0f
-                DashboardUiState(
-                    isLoading = false,
-                    revenueYtdCents = totalIncome,
-                    pendingCents = totalIncome,
-                    overdueCents = totalExpenses,
-                    revenueChangePercent = changePct,
-                    revenueChartData = chartData,
-                    criticalMilestones = milestones,
-                    todayAgenda = agenda
-                )
-            }.collect { _uiState.value = it }
+            refreshTrigger
+                .flatMapLatest { getDashboardMetricsUseCase() }
+                .collect { raw ->
+                    val chartData = buildRevenueChartUseCase(raw.recentTx.map { it.dateMillis to it.amountCents.toFloat() })
+                    val changePct = if (raw.prevIncome > 0) ((raw.recentIncome - raw.prevIncome).toFloat() / raw.prevIncome * 100) else 0f
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isInitialLoad = false,
+                        revenueYtdCents = raw.totalIncome,
+                        pendingCents = (raw.totalIncome - raw.recentIncome).coerceAtLeast(0L),
+                        overdueCents = raw.totalExpenses,
+                        revenueChangePercent = changePct,
+                        revenueChartData = chartData,
+                        criticalMilestones = raw.milestones,
+                        todayAgenda = raw.agenda
+                    )
+                }
         }
     }
 
-    private fun buildChartData(points: List<Pair<Long, Float>>): List<Pair<String, Float>> {
-        val days = (0..6).map { i ->
-            val cal = java.util.Calendar.getInstance()
-            cal.add(java.util.Calendar.DAY_OF_YEAR, -(6 - i))
-            val label = java.text.SimpleDateFormat("EEE", java.util.Locale.getDefault()).format(cal.time)
-            val dayStart = cal.apply { set(java.util.Calendar.HOUR_OF_DAY, 0) }.timeInMillis
-            val dayEnd = dayStart + 86_400_000L
-            val total = points.filter { it.first in dayStart..dayEnd }.sumOf { it.second.toDouble() }.toFloat()
-            label to total
+    fun refresh() {
+        _uiState.update { it.copy(isLoading = true) }
+        refreshTrigger.value++
+    }
+
+    private val _todayEvents = MutableStateFlow<List<Event>>(emptyList())
+    val todayEvents: StateFlow<List<Event>> = _todayEvents.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            eventRepo.getAllEvents().collect { _todayEvents.value = it }
         }
-        return days
+    }
+
+    private var pendingDeletedAgenda: AgendaItem? = null
+    private var clearPendingAgendaJob: Job? = null
+
+    fun addAgendaItem(title: String, description: String, scheduledDateMillis: Long, eventId: Long?) {
+        viewModelScope.launch {
+            agendaRepo.upsertAgendaItem(AgendaItem(
+                title = title.trim(),
+                description = description.trim(),
+                scheduledDateMillis = scheduledDateMillis,
+                eventId = eventId
+            ))
+            refresh()
+        }
+    }
+
+    fun deleteAgendaItem(item: AgendaItem) {
+        viewModelScope.launch {
+            agendaRepo.deleteAgendaItem(item)
+            pendingDeletedAgenda = item
+            _uiState.update { it.copy(snackbarMessage = "Deleted \"${item.title}\"") }
+            clearPendingAgendaJob?.cancel()
+            clearPendingAgendaJob = viewModelScope.launch {
+                delay(5000)
+                pendingDeletedAgenda = null
+                _uiState.update { it.copy(snackbarMessage = null) }
+            }
+        }
+    }
+
+    fun undoDeleteAgenda() {
+        clearPendingAgendaJob?.cancel()
+        viewModelScope.launch {
+            pendingDeletedAgenda?.let { agendaRepo.upsertAgendaItem(it) }
+            pendingDeletedAgenda = null
+            _uiState.update { it.copy(snackbarMessage = null) }
+        }
+    }
+
+    fun clearSnackbar() {
+        _uiState.update { it.copy(snackbarMessage = null) }
     }
 }

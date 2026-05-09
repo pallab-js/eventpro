@@ -1,5 +1,6 @@
 package com.eventpro.admin.ui.events
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.eventpro.admin.domain.model.Client
@@ -8,10 +9,15 @@ import com.eventpro.admin.domain.model.EventStatus
 import com.eventpro.admin.domain.repository.ClientRepository
 import com.eventpro.admin.domain.repository.EventRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@Immutable
 data class AddEditEventFormState(
     val title: String = "",
     val titleError: String? = null,
@@ -20,11 +26,15 @@ data class AddEditEventFormState(
     val endDateMillis: Long? = null,
     val venueName: String = "",
     val estimatedAttendees: String = "",
+    val attendeesError: String? = null,
     val totalBudget: String = "",
+    val budgetError: String? = null,
+    val dateError: String? = null,
     val notes: String = "",
     val clientId: Long? = null,
     val isSaving: Boolean = false,
-    val savedSuccessfully: Boolean = false
+    val savedSuccessfully: Boolean = false,
+    val hasUnsavedChanges: Boolean = false
 )
 
 @HiltViewModel
@@ -38,6 +48,8 @@ class AddEditEventViewModel @Inject constructor(
     private val _clients = MutableStateFlow<List<Client>>(emptyList())
     val clients: StateFlow<List<Client>> = _clients.asStateFlow()
 
+    private var originalEvent: Event? = null
+
     init {
         viewModelScope.launch {
             clientRepo.getAllClients().collect { _clients.value = it }
@@ -45,7 +57,8 @@ class AddEditEventViewModel @Inject constructor(
     }
 
     fun load(eventId: Long) = viewModelScope.launch {
-        repo.getEventById(eventId).firstOrNull()?.let { e ->
+        repo.getEventById(eventId).first()?.let { e ->
+            originalEvent = e
             _form.update { it.copy(
                 title = e.title, status = e.status, startDateMillis = e.startDateMillis,
                 endDateMillis = e.endDateMillis, clientId = e.clientId,
@@ -55,19 +68,30 @@ class AddEditEventViewModel @Inject constructor(
         }
     }
 
-    fun onTitleChange(v: String) = _form.update { it.copy(title = v, titleError = null) }
-    fun onStatusChange(v: EventStatus) = _form.update { it.copy(status = v) }
-    fun onDateChange(v: Long) = _form.update { it.copy(startDateMillis = v) }
-    fun onEndDateChange(v: Long?) = _form.update { it.copy(endDateMillis = v) }
-    fun onClientIdChange(v: Long?) = _form.update { it.copy(clientId = v) }
-    fun onVenueChange(v: String) = _form.update { it.copy(venueName = v) }
-    fun onAttendeesChange(v: String) = _form.update { it.copy(estimatedAttendees = v) }
-    fun onBudgetChange(v: String) = _form.update { it.copy(totalBudget = v) }
-    fun onNotesChange(v: String) = _form.update { it.copy(notes = v) }
+    fun onTitleChange(v: String) = _form.update { it.copy(title = v, titleError = null, hasUnsavedChanges = true) }
+    fun onStatusChange(v: EventStatus) = _form.update { it.copy(status = v, hasUnsavedChanges = true) }
+    fun onDateChange(v: Long) = _form.update { it.copy(startDateMillis = v, dateError = null, hasUnsavedChanges = true) }
+    fun onEndDateChange(v: Long?) = _form.update { it.copy(endDateMillis = v, dateError = null, hasUnsavedChanges = true) }
+    fun onClientIdChange(v: Long?) = _form.update { it.copy(clientId = v, hasUnsavedChanges = true) }
+    fun onVenueChange(v: String) = _form.update { it.copy(venueName = v, hasUnsavedChanges = true) }
+    fun onAttendeesChange(v: String) = _form.update { it.copy(estimatedAttendees = v, attendeesError = null, hasUnsavedChanges = true) }
+    fun onBudgetChange(v: String) = _form.update { it.copy(totalBudget = v, budgetError = null, hasUnsavedChanges = true) }
+    fun onNotesChange(v: String) = _form.update { it.copy(notes = v, hasUnsavedChanges = true) }
 
     fun save(existingId: Long? = null) {
         val f = _form.value
-        if (f.title.isBlank()) { _form.update { it.copy(titleError = "Title is required") }; return }
+        var hasError = false
+        if (f.title.isBlank()) { _form.update { it.copy(titleError = "Title is required") }; hasError = true }
+        if (f.estimatedAttendees.isNotBlank() && f.estimatedAttendees.toIntOrNull() == null) {
+            _form.update { it.copy(attendeesError = "Must be a whole number") }; hasError = true
+        }
+        if (f.totalBudget.isNotBlank() && f.totalBudget.toDoubleOrNull() == null) {
+            _form.update { it.copy(budgetError = "Must be a valid amount") }; hasError = true
+        }
+        if (f.endDateMillis != null && f.endDateMillis < f.startDateMillis) {
+            _form.update { it.copy(dateError = "End date must be after start date") }; hasError = true
+        }
+        if (hasError) return
         viewModelScope.launch {
             _form.update { it.copy(isSaving = true) }
             val now = System.currentTimeMillis()
@@ -82,8 +106,8 @@ class AddEditEventViewModel @Inject constructor(
                 estimatedAttendees = f.estimatedAttendees.toIntOrNull() ?: 0,
                 notes = f.notes.trim(),
                 totalBudgetCents = ((f.totalBudget.toDoubleOrNull() ?: 0.0) * 100).toLong(),
-                spentBudgetCents = 0L,
-                createdAtMillis = now,
+                spentBudgetCents = originalEvent?.spentBudgetCents ?: 0L,
+                createdAtMillis = originalEvent?.createdAtMillis ?: now,
                 updatedAtMillis = now
             ))
             _form.update { it.copy(isSaving = false, savedSuccessfully = true) }

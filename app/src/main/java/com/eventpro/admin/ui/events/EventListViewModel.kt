@@ -1,19 +1,28 @@
 package com.eventpro.admin.ui.events
 
+import androidx.annotation.VisibleForTesting
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.eventpro.admin.domain.model.Event
 import com.eventpro.admin.domain.model.EventStatus
 import com.eventpro.admin.domain.repository.ClientRepository
 import com.eventpro.admin.domain.repository.EventRepository
+import com.eventpro.admin.domain.usecase.GetFilteredEventsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.Calendar
 import javax.inject.Inject
 
 enum class TimeFilter { ALL, THIS_MONTH, THIS_QUARTER }
 
+@Immutable
 data class EventListUiState(
     val isLoading: Boolean = true,
     val events: List<Event> = emptyList(),
@@ -21,13 +30,15 @@ data class EventListUiState(
     val selectedStatus: EventStatus? = null,
     val selectedTimeFilter: TimeFilter = TimeFilter.ALL,
     val isSearchActive: Boolean = false,
-    val clientNameMap: Map<Long, String> = emptyMap()
+    val clientNameMap: Map<Long, String> = emptyMap(),
+    val snackbarMessage: String? = null
 )
 
 @HiltViewModel
 class EventListViewModel @Inject constructor(
     private val repo: EventRepository,
-    private val clientRepo: ClientRepository
+    private val clientRepo: ClientRepository,
+    private val getFilteredEventsUseCase: GetFilteredEventsUseCase
 ) : ViewModel() {
     private val _state = MutableStateFlow(EventListUiState())
     val uiState: StateFlow<EventListUiState> = _state.asStateFlow()
@@ -54,43 +65,46 @@ class EventListViewModel @Inject constructor(
     fun onTimeFilter(t: TimeFilter) { _state.update { it.copy(selectedTimeFilter = t) }; applyFilters() }
     fun onSearchToggle() { _state.update { it.copy(isSearchActive = !it.isSearchActive, searchQuery = "") }; applyFilters() }
 
-    fun deleteEvent(event: Event) = viewModelScope.launch { repo.deleteEvent(event) }
+    private var pendingDeletedEvent: Event? = null
+    private var clearPendingJob: Job? = null
 
-    private fun applyFilters() {
+    fun deleteEvent(event: Event) {
+        viewModelScope.launch {
+            repo.deleteEvent(event)
+            pendingDeletedEvent = event
+            _state.update { it.copy(snackbarMessage = "Deleted \"${event.title}\"") }
+            clearPendingJob?.cancel()
+            clearPendingJob = viewModelScope.launch {
+                delay(5000)
+                pendingDeletedEvent = null
+                _state.update { it.copy(snackbarMessage = null) }
+            }
+        }
+    }
+
+    fun undoDelete() {
+        clearPendingJob?.cancel()
+        viewModelScope.launch {
+            pendingDeletedEvent?.let { repo.upsertEvent(it) }
+            pendingDeletedEvent = null
+            _state.update { it.copy(snackbarMessage = null) }
+        }
+    }
+
+    fun clearSnackbar() {
+        _state.update { it.copy(snackbarMessage = null) }
+    }
+
+    @VisibleForTesting
+    internal fun applyFilters() {
         val s = _state.value
-        val now = System.currentTimeMillis()
-        val monthStart = Calendar.getInstance().apply {
-            set(Calendar.DAY_OF_MONTH, 1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-        val quarterStart = Calendar.getInstance().apply {
-            val month = get(Calendar.MONTH)
-            set(Calendar.MONTH, (month / 3) * 3)
-            set(Calendar.DAY_OF_MONTH, 1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-
-        val filtered = allEvents.value
-            .filter { s.selectedStatus == null || it.status == s.selectedStatus }
-            .filter {
-                when (s.selectedTimeFilter) {
-                    TimeFilter.ALL -> true
-                    TimeFilter.THIS_MONTH -> it.startDateMillis >= monthStart
-                    TimeFilter.THIS_QUARTER -> it.startDateMillis >= quarterStart
-                }
-            }
-            .filter { ev ->
-                s.searchQuery.isBlank() ||
-                ev.title.contains(s.searchQuery, true) ||
-                ev.venueName.contains(s.searchQuery, true) ||
-                s.clientNameMap[ev.clientId]?.contains(s.searchQuery, true) == true
-            }
+        val filtered = getFilteredEventsUseCase(
+            events = allEvents.value,
+            selectedStatus = s.selectedStatus,
+            selectedTimeFilter = s.selectedTimeFilter,
+            searchQuery = s.searchQuery,
+            clientNameMap = s.clientNameMap
+        )
         _state.update { it.copy(isLoading = false, events = filtered) }
     }
 }

@@ -1,7 +1,16 @@
 package com.eventpro.admin.domain.model
 
-enum class EventStatus { DRAFT, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED }
+import androidx.compose.runtime.Immutable
 
+enum class EventStatus(val displayName: String) {
+    DRAFT("Draft"),
+    CONFIRMED("Confirmed"),
+    IN_PROGRESS("In Progress"),
+    COMPLETED("Completed"),
+    CANCELLED("Cancelled")
+}
+
+@Immutable
 data class Event(
     val id: Long = 0,
     val title: String,

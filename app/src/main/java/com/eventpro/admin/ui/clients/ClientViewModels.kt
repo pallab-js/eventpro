@@ -1,22 +1,35 @@
 package com.eventpro.admin.ui.clients
 
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.eventpro.admin.domain.model.*
+import com.eventpro.admin.domain.model.Client
+import com.eventpro.admin.domain.model.ClientStatus
+import com.eventpro.admin.domain.model.ClientTier
+import com.eventpro.admin.domain.model.Event
 import com.eventpro.admin.domain.repository.ClientRepository
 import com.eventpro.admin.domain.repository.EventRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 // ─── List ─────────────────────────────────────────────────────────────────────
 
+@Immutable
 data class ClientListUiState(
     val isLoading: Boolean = true,
     val clients: List<Client> = emptyList(),
     val searchQuery: String = "",
-    val selectedStatus: ClientStatus? = null
+    val selectedStatus: ClientStatus? = null,
+    val snackbarMessage: String? = null
 )
 
 @HiltViewModel
@@ -36,7 +49,36 @@ class ClientListViewModel @Inject constructor(private val repo: ClientRepository
 
     fun onSearch(q: String) { _state.update { it.copy(searchQuery = q) }; applyFilters() }
     fun onStatusFilter(s: ClientStatus?) { _state.update { it.copy(selectedStatus = s) }; applyFilters() }
-    fun deleteClient(client: Client) = viewModelScope.launch { repo.deleteClient(client) }
+
+    private var pendingDeletedClient: Client? = null
+    private var clearPendingJob: Job? = null
+
+    fun deleteClient(client: Client) {
+        viewModelScope.launch {
+            repo.deleteClient(client)
+            pendingDeletedClient = client
+            _state.update { it.copy(snackbarMessage = "Deleted \"${client.companyName}\"") }
+            clearPendingJob?.cancel()
+            clearPendingJob = viewModelScope.launch {
+                delay(5000)
+                pendingDeletedClient = null
+                _state.update { it.copy(snackbarMessage = null) }
+            }
+        }
+    }
+
+    fun undoDelete() {
+        clearPendingJob?.cancel()
+        viewModelScope.launch {
+            pendingDeletedClient?.let { repo.upsertClient(it) }
+            pendingDeletedClient = null
+            _state.update { it.copy(snackbarMessage = null) }
+        }
+    }
+
+    fun clearSnackbar() {
+        _state.update { it.copy(snackbarMessage = null) }
+    }
 
     private fun applyFilters() {
         val s = _state.value
@@ -49,6 +91,7 @@ class ClientListViewModel @Inject constructor(private val repo: ClientRepository
 
 // ─── Detail ───────────────────────────────────────────────────────────────────
 
+@Immutable
 data class ClientDetailUiState(
     val isLoading: Boolean = true,
     val client: Client? = null,
@@ -77,6 +120,7 @@ class ClientDetailViewModel @Inject constructor(
 
 // ─── Add/Edit ─────────────────────────────────────────────────────────────────
 
+@Immutable
 data class AddEditClientFormState(
     val companyName: String = "",
     val companyNameError: String? = null,
@@ -95,7 +139,7 @@ class AddEditClientViewModel @Inject constructor(private val repo: ClientReposit
     val formState: StateFlow<AddEditClientFormState> = _form.asStateFlow()
 
     fun load(clientId: Long) = viewModelScope.launch {
-        repo.getClientById(clientId).firstOrNull()?.let { c ->
+        repo.getClientById(clientId).first()?.let { c ->
             _form.update { it.copy(companyName = c.companyName, contactName = c.contactName, phone = c.phone, email = c.email, tier = c.tier, status = c.status) }
         }
     }

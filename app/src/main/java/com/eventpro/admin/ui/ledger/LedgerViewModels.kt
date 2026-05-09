@@ -5,23 +5,34 @@ import android.content.Context
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.eventpro.admin.data.local.dao.CategoryTotal
-import com.eventpro.admin.domain.model.*
+import com.eventpro.admin.domain.model.Event
+import com.eventpro.admin.domain.model.ExpenseCategory
+import com.eventpro.admin.domain.model.Transaction
+import com.eventpro.admin.domain.model.TransactionType
 import com.eventpro.admin.domain.repository.EventRepository
 import com.eventpro.admin.domain.repository.FinancialRepository
 import com.eventpro.admin.util.CurrencyFormatter
 import com.eventpro.admin.util.DateFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.*
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
+@Immutable
 data class LedgerUiState(
     val isLoading: Boolean = true,
     val transactions: List<Transaction> = emptyList(),
@@ -30,7 +41,8 @@ data class LedgerUiState(
     val pendingInvoicesCents: Long = 0L,
     val categoryTotals: List<CategoryTotal> = emptyList(),
     val showAll: Boolean = false,
-    val exportStatus: String? = null
+    val exportStatus: String? = null,
+    val snackbarMessage: String? = null
 )
 
 @HiltViewModel
@@ -54,7 +66,36 @@ class LedgerViewModel @Inject constructor(
     }
 
     fun toggleShowAll() = _state.update { it.copy(showAll = !it.showAll) }
-    fun deleteTransaction(t: Transaction) = viewModelScope.launch { repo.deleteTransaction(t) }
+
+    private var pendingDeletedTx: Transaction? = null
+    private var clearPendingJob: Job? = null
+
+    fun deleteTransaction(t: Transaction) {
+        viewModelScope.launch {
+            repo.deleteTransaction(t)
+            pendingDeletedTx = t
+            _state.update { it.copy(snackbarMessage = "Deleted transaction") }
+            clearPendingJob?.cancel()
+            clearPendingJob = viewModelScope.launch {
+                delay(5000)
+                pendingDeletedTx = null
+                _state.update { it.copy(snackbarMessage = null) }
+            }
+        }
+    }
+
+    fun undoDelete() {
+        clearPendingJob?.cancel()
+        viewModelScope.launch {
+            pendingDeletedTx?.let { repo.upsertTransaction(it) }
+            pendingDeletedTx = null
+            _state.update { it.copy(snackbarMessage = null) }
+        }
+    }
+
+    fun clearSnackbar() {
+        _state.update { it.copy(snackbarMessage = null) }
+    }
 
     fun exportCsv(context: Context) = viewModelScope.launch(Dispatchers.IO) {
         val txs = _state.value.transactions
@@ -64,7 +105,7 @@ class LedgerViewModel @Inject constructor(
                 appendLine("${DateFormatter.format(t.dateMillis)},\"${t.description}\",${t.type},${t.category},${CurrencyFormatter.formatCents(t.amountCents)},${t.referenceNumber},\"${t.clientOrVendorName}\"")
             }
         }
-        val fileName = "eventpro_ledger_${SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())}.csv"
+        val fileName = "eventpro_ledger_${LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))}.csv"
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val values = ContentValues().apply {
@@ -92,14 +133,15 @@ fun categoriesForType(type: TransactionType): List<Pair<String, ExpenseCategory>
             "Deposit" to ExpenseCategory.MISC,
             "Other Income" to ExpenseCategory.MISC
         )
-        TransactionType.EXPENSE -> ExpenseCategory.values().map { c ->
-            c.name.lowercase().replaceFirstChar { it.uppercase() } to c
+        TransactionType.EXPENSE -> ExpenseCategory.entries.map { c ->
+            c.displayName to c
         }
     }
 }
 
 // ─── Add Transaction ──────────────────────────────────────────────────────────
 
+@Immutable
 data class AddTransactionFormState(
     val type: TransactionType = TransactionType.INCOME,
     val description: String = "",

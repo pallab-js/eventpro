@@ -9,7 +9,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.eventpro.admin.domain.model.EventStatus
-import com.eventpro.admin.ui.theme.*
+import com.eventpro.admin.ui.theme.ErrorContainer
+import com.eventpro.admin.ui.theme.ErrorRed
+import com.eventpro.admin.ui.theme.Navy300
+import com.eventpro.admin.ui.theme.Navy700
+import com.eventpro.admin.ui.theme.OnSurfaceVariant
+import com.eventpro.admin.ui.theme.Slate200
+import com.eventpro.admin.ui.theme.Slate600
+import com.eventpro.admin.ui.theme.SurfaceContainerHigh
 
 @Composable
 fun StatusBadge(status: EventStatus) {

@@ -1,8 +1,24 @@
 package com.eventpro.admin.domain.model
 
-enum class VendorCategory { CATERING, FLORAL, AV, MUSIC, PHOTOGRAPHY, LOGISTICS, OTHER }
-enum class VendorStatus { CONFIRMED, PENDING_CONTRACT, AWAITING_DEPOSIT, CANCELLED }
+import androidx.compose.runtime.Immutable
 
+enum class VendorCategory(val displayName: String) {
+    CATERING("Catering"),
+    FLORAL("Floral"),
+    AV("AV"),
+    MUSIC("Music"),
+    PHOTOGRAPHY("Photography"),
+    LOGISTICS("Logistics"),
+    OTHER("Other")
+}
+enum class VendorStatus(val displayName: String) {
+    CONFIRMED("Confirmed"),
+    PENDING_CONTRACT("Pending Contract"),
+    AWAITING_DEPOSIT("Awaiting Deposit"),
+    CANCELLED("Cancelled")
+}
+
+@Immutable
 data class Vendor(
     val id: Long = 0,
     val name: String,
@@ -11,6 +27,7 @@ data class Vendor(
     val email: String
 )
 
+@Immutable
 data class EventVendor(
     val eventId: Long,
     val vendor: Vendor,

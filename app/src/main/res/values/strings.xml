@@ -1,4 +1,179 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">EventPro Admin</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_events">Events</string>
+    <string name="nav_clients">Clients</string>
+    <string name="nav_inventory">Inventory</string>
+    <string name="nav_ledger">Ledger</string>
+
+    <!-- Common Actions -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_add">Add</string>
+    <string name="action_ok">OK</string>
+    <string name="action_discard">Discard</string>
+    <string name="action_undo">UNDO</string>
+    <string name="action_save_changes">Save Changes</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_search">Search</string>
+    <string name="action_back">Back</string>
+    <string name="action_more_options">More options</string>
+    <string name="action_view_all">View All</string>
+    <string name="action_show_less">Show Less</string>
+    <string name="action_export_csv">Export CSV</string>
+
+    <!-- Screen Titles -->
+    <string name="title_dashboard">EventPro Admin</string>
+    <string name="title_events">Event Master List</string>
+    <string name="title_event_detail">Event Detail</string>
+    <string name="title_create_event">Create Event</string>
+    <string name="title_edit_event">Edit Event</string>
+    <string name="title_clients">Client Directory</string>
+    <string name="title_client_detail">Client</string>
+    <string name="title_add_client">Add Client</string>
+    <string name="title_edit_client">Edit Client</string>
+    <string name="title_inventory">Inventory &amp; Resources</string>
+    <string name="title_add_item">Add Item</string>
+    <string name="title_edit_item">Edit Item</string>
+    <string name="title_ledger">Financial Ledger</string>
+    <string name="title_add_transaction">Add Transaction</string>
+
+    <!-- Content Descriptions -->
+    <string name="desc_toggle_theme">Toggle theme</string>
+    <string name="desc_add_agenda">Add agenda item</string>
+    <string name="desc_pick_date">Pick Date</string>
+    <string name="desc_select_date">Select date</string>
+    <string name="desc_create_event">Create Event</string>
+    <string name="desc_add_client">Add Client</string>
+    <string name="desc_add_inventory">Add Item</string>
+    <string name="desc_add_transaction">Add Transaction</string>
+    <string name="desc_more">More</string>
+    <string name="desc_reserve_item">Reserve item</string>
+    <string name="desc_release">Release reservation</string>
+    <string name="desc_increase">Increase</string>
+    <string name="desc_decrease">Decrease</string>
+
+    <!-- Status Labels -->
+    <string name="status_draft">Draft</string>
+    <string name="status_confirmed">Confirmed</string>
+    <string name="status_in_progress">In Progress</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_cancelled">Cancelled</string>
+    <string name="status_in_stock">In Stock</string>
+    <string name="status_low_stock">Low Stock</string>
+    <string name="status_out_of_stock">Out of Stock</string>
+    <string name="status_active">Active</string>
+    <string name="status_past">Past</string>
+    <string name="status_all">All</string>
+    <string name="status_local">Local</string>
+
+    <!-- Dialog Messages -->
+    <string name="dialog_discard_title">Discard changes?</string>
+    <string name="dialog_discard_message">Your unsaved changes will be lost.</string>
+    <string name="dialog_delete_title">Delete %1$s?</string>
+    <string name="dialog_delete_message">This action cannot be undone.</string>
+    <string name="dialog_keep_editing">Keep editing</string>
+    <string name="dialog_confirm_delete">Delete</string>
+
+    <!-- Empty State -->
+    <string name="empty_no_events">No events found</string>
+    <string name="empty_create_first_event">Create your first event with the + button</string>
+    <string name="empty_no_clients">No clients found</string>
+    <string name="empty_add_first_client">Add your first client with the + button</string>
+    <string name="empty_no_inventory">No items found</string>
+    <string name="empty_add_first_inventory">Add inventory items with the + button</string>
+    <string name="empty_no_transactions">No transactions</string>
+    <string name="empty_add_first_transaction">Add your first transaction with the + button</string>
+    <string name="empty_no_milestones">No milestones</string>
+    <string name="empty_add_milestones">Add milestones to track progress</string>
+    <string name="empty_no_vendors">No vendors assigned</string>
+    <string name="empty_assign_vendors">Assign vendors to this event</string>
+    <string name="empty_no_reservations">No items reserved</string>
+    <string name="empty_reserve_items">Reserve inventory items for this event</string>
+    <string name="empty_no_agenda">No agenda items today</string>
+    <string name="empty_tap_to_add_agenda">Tap + to add agenda items</string>
+
+    <!-- Form Labels -->
+    <string name="label_title_required">Title *</string>
+    <string name="label_event_title">Event Title *</string>
+    <string name="label_status">Status</string>
+    <string name="label_start_date">Start Date</string>
+    <string name="label_end_date">End Date (optional)</string>
+    <string name="label_client">Client</string>
+    <string name="label_venue">Venue</string>
+    <string name="label_estimated_attendees">Estimated Attendees</string>
+    <string name="label_total_budget">Total Budget ($)</string>
+    <string name="label_notes">Notes</string>
+    <string name="label_description">Description</string>
+    <string name="label_date">Date</string>
+    <string name="label_amount">Amount *</string>
+    <string name="label_category">Category</string>
+    <string name="label_item_name">Item Name *</string>
+    <string name="label_total_units">Total Units</string>
+    <string name="label_available_units">Available Units</string>
+    <string name="label_company_name">Company Name *</string>
+    <string name="label_contact_name">Contact Name</string>
+    <string name="label_phone">Phone</string>
+    <string name="label_email">Email</string>
+    <string name="label_tier">Tier</string>
+    <string name="label_vendor">Vendor</string>
+    <string name="label_item">Item</string>
+    <string name="label_quantity">Quantity</string>
+    <string name="label_reference">Reference # (optional)</string>
+    <string name="label_client_vendor">Client / Vendor Name</string>
+    <string name="label_link_to_event">Link to Event</string>
+    <string name="label_none">None</string>
+    <string name="label_quick_notes">Quick Notes</string>
+
+    <!-- Client Tiers -->
+    <string name="tier_vip">VIP</string>
+    <string name="tier_enterprise">Enterprise</string>
+    <string name="tier_standard">Standard</string>
+
+    <!-- Error Messages -->
+    <string name="error_title_required">Title is required</string>
+    <string name="error_company_required">Company name is required</string>
+    <string name="error_name_required">Name is required</string>
+    <string name="error_whole_number">Must be a whole number</string>
+    <string name="error_valid_amount">Must be a valid amount</string>
+    <string name="error_date_order">End date must be after start date</string>
+    <string name="error_required">Required</string>
+    <string name="error_enter_valid_amount">Enter a valid amount</string>
+
+    <!-- Section Labels -->
+    <string name="section_critical_milestones">Critical Milestones</string>
+    <string name="section_today_agenda">Today\'s Agenda</string>
+    <string name="section_recent_revenue">Recent Revenue · Trailing 30 Days</string>
+    <string name="section_expense_breakdown">Expense Breakdown</string>
+    <string name="section_transactions">Transactions</string>
+    <string name="section_linked_events">Linked Events</string>
+    <string name="section_reserved_items">Reserved Items</string>
+    <string name="section_available_items">Available Items</string>
+
+    <!-- Tab Labels -->
+    <string name="tab_timeline">Timeline</string>
+    <string name="tab_vendors">Vendors</string>
+    <string name="tab_budget">Budget</string>
+    <string name="tab_inventory">Inventory</string>
+
+    <!-- Event Detail -->
+    <string name="mark_complete">Mark Complete</string>
+    <string name="duplicate_event">Duplicate</string>
+    <string name="venue_tbd">Venue TBD</string>
+    <string name="venue_pending">Venue Pending</string>
+
+    <!-- Search Placeholders -->
+    <string name="search_events">Search events…</string>
+    <string name="search_clients">Search clients…</string>
+    <string name="search_inventory">Search inventory…</string>
+
+    <!-- Dashboard -->
+    <string name="subtitle_operations">Operations Manager</string>
+    <string name="pending_label">Pending:</string>
+    <string name="expenses_label">Expenses:</string>
 </resources>

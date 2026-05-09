@@ -11,6 +11,7 @@ interface FinancialRepository {
     fun getTotalByTypeInRange(type: String, from: Long, to: Long): Flow<Long>
     fun getTransactionsByDateRange(from: Long, to: Long): Flow<List<Transaction>>
     fun getExpenseTotalsGroupedByCategory(): Flow<List<CategoryTotal>>
+    fun getTransactionsByEvent(eventId: Long): Flow<List<Transaction>>
     suspend fun upsertTransaction(t: Transaction): Long
     suspend fun deleteTransaction(t: Transaction)
 }

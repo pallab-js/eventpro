@@ -26,7 +26,10 @@ fun AppNavGraph(navController: NavHostController) {
         composable(
             Screen.EventDetail.route,
             arguments = listOf(navArgument(Screen.EventDetail.ARG) { type = NavType.LongType })
-        ) { EventDetailScreen(navController, it.arguments!!.getLong(Screen.EventDetail.ARG)) }
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getLong(Screen.EventDetail.ARG) ?: return@composable
+            EventDetailScreen(navController, id)
+        }
         composable(
             Screen.AddEditEvent.route,
             arguments = listOf(navArgument("eventId") { type = NavType.LongType; defaultValue = -1L })
@@ -35,7 +38,10 @@ fun AppNavGraph(navController: NavHostController) {
         composable(
             Screen.ClientDetail.route,
             arguments = listOf(navArgument(Screen.ClientDetail.ARG) { type = NavType.LongType })
-        ) { ClientDetailScreen(navController, it.arguments!!.getLong(Screen.ClientDetail.ARG)) }
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getLong(Screen.ClientDetail.ARG) ?: return@composable
+            ClientDetailScreen(navController, id)
+        }
         composable(
             Screen.AddEditClient.route,
             arguments = listOf(navArgument("clientId") { type = NavType.LongType; defaultValue = -1L })

@@ -1,28 +1,31 @@
 package com.eventpro.admin.util
 
-import java.text.SimpleDateFormat
-import java.util.*
-import java.util.concurrent.TimeUnit
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 object DateFormatter {
-    private val displayFmt = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-    private val timeFmt = SimpleDateFormat("h:mm a", Locale.getDefault())
+    private val displayFmt = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault())
+    private val timeFmt = DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
+    private val zoneId = ZoneId.systemDefault()
 
-    fun format(millis: Long): String = displayFmt.format(Date(millis))
-    fun formatTime(millis: Long): String = timeFmt.format(Date(millis))
+    fun format(millis: Long): String =
+        Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate().format(displayFmt)
 
-    fun daysUntil(millis: Long): Long {
-        val diff = millis - System.currentTimeMillis()
-        return TimeUnit.MILLISECONDS.toDays(diff)
-    }
+    fun formatTime(millis: Long): String =
+        Instant.ofEpochMilli(millis).atZone(zoneId).toLocalTime().format(timeFmt)
 
-    fun todayStartMillis(): Long = Calendar.getInstance().apply {
-        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
-    }.timeInMillis
+    fun daysUntil(millis: Long): Long =
+        Duration.between(LocalDate.now(zoneId).atStartOfDay(),
+            Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate().atStartOfDay()).toDays()
 
-    fun todayEndMillis(): Long = Calendar.getInstance().apply {
-        set(Calendar.HOUR_OF_DAY, 23); set(Calendar.MINUTE, 59)
-        set(Calendar.SECOND, 59); set(Calendar.MILLISECOND, 999)
-    }.timeInMillis
+    fun todayStartMillis(): Long =
+        LocalDate.now(zoneId).atStartOfDay(zoneId).toInstant().toEpochMilli()
+
+    fun todayEndMillis(): Long =
+        LocalDate.now(zoneId).atTime(LocalTime.MAX).atZone(zoneId).toInstant().toEpochMilli()
 }

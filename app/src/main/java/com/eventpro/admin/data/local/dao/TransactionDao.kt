@@ -1,6 +1,9 @@
 package com.eventpro.admin.data.local.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Query
+import androidx.room.Upsert
 import com.eventpro.admin.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -25,6 +28,9 @@ interface TransactionDao {
 
     @Query("SELECT category, SUM(amountCents) as total FROM transactions WHERE type = 'EXPENSE' GROUP BY category")
     fun getExpenseTotalsGroupedByCategory(): Flow<List<CategoryTotal>>
+
+    @Query("SELECT * FROM transactions WHERE eventId = :eventId ORDER BY dateMillis DESC")
+    fun getTransactionsByEvent(eventId: Long): Flow<List<TransactionEntity>>
 
     @Upsert
     suspend fun upsertTransaction(t: TransactionEntity): Long

@@ -1,6 +1,9 @@
 package com.eventpro.admin.data.local.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Query
+import androidx.room.Upsert
 import com.eventpro.admin.data.local.entity.ClientEntity
 import kotlinx.coroutines.flow.Flow
 

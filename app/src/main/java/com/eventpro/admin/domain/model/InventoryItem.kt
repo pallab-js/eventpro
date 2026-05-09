@@ -1,8 +1,18 @@
 package com.eventpro.admin.domain.model
 
-enum class InventoryCategory { AUDIO, VISUAL, LIGHTING, STAGING, FURNITURE, OTHER }
+import androidx.compose.runtime.Immutable
+
+enum class InventoryCategory(val displayName: String) {
+    AUDIO("Audio"),
+    VISUAL("Visual"),
+    LIGHTING("Lighting"),
+    STAGING("Staging"),
+    FURNITURE("Furniture"),
+    OTHER("Other")
+}
 enum class StockStatus { IN_STOCK, LOW_STOCK, OUT_OF_STOCK }
 
+@Immutable
 data class InventoryItem(
     val id: Long = 0,
     val name: String,
