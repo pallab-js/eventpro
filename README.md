@@ -15,12 +15,6 @@ An offline-first Android app for event management professionals. Track events, c
 - **Financial Ledger** — Revenue vs. expense tracking, pending invoices, expense breakdown by category with visual chart
 - **100% Offline** — All data stored locally via Room SQLite. No accounts, no servers, no internet dependency.
 
-## Screenshots
-
-| Dashboard | Events | Event Detail |
-|:---:|:---:|:---:|
-| <img src="screenshots/dashboard.png" width="200"> | <img src="screenshots/events.png" width="200"> | <img src="screenshots/event_detail.png" width="200"> |
-
 ## Tech Stack
 
 | Layer | Technology |
